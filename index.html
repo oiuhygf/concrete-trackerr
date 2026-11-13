@@ -58,6 +58,7 @@ th,td{border:2px solid #000;padding:8px;text-align:center}th{background:var(--mi
 </header>
 <main>
 <section id="sv">
+  <div class="row" id="curS"></div>
   <h2>اسم المراقب / رقم الجهاز</h2>
   <input id="who" placeholder="مثال: أحمد - مضخة 1">
   <h2>الموقع / المضخة</h2>
@@ -99,6 +100,7 @@ const firebaseConfig = {
   appId: "1:749008210469:web:3df56985c3d354ca3f4dcc",
   measurementId: "G-R5MSKPB3VF"
 };
+
 const SITES = ["مضخة 1", "مضخة 2", "مضخة 3"];   // عدّل الأسماء أو أضف مواقع
 const QTYS = [8, 9, 10, 12];
 // ======================================================
@@ -129,17 +131,22 @@ db.ref('.info/connected').on('value', s => {
 db.ref('meta/activeSession').on('value', async s => {
   if (!s.val()) { await newSession('الصبة الأولى'); return; }
   activeSid = s.val(); ls.set('activeSid', activeSid);
-  if (!viewSid || viewSid.auto) viewSid = {id: activeSid, auto: true};
+  viewSid = {id: activeSid, auto: true};
   listen();
 });
 db.ref('sessions').on('value', s => {
   const v = s.val() || {};
   $('sess').innerHTML = Object.entries(v).sort((a,b)=>b[1].startedAt-a[1].startedAt)
-    .map(([id,x]) => `<option value="${esc(id)}">${esc(x.name)}${id===activeSid?' (الحالية)':''}</option>`).join('');
+    .map(([id,x]) => `<option value="${esc(id)}">${esc(x.name)}${id===activeSid?' ✔ (المفعّلة)':''}</option>`).join('');
   if (viewSid) $('sess').value = viewSid.id;
   window.sessions = v; render();
 });
-$('sess').onchange = e => { viewSid = {id: e.target.value, auto: e.target.value === activeSid}; listen(); };
+$('sess').onchange = async e => {
+  const id = e.target.value, name = (window.sessions[id] || {}).name || '';
+  if (id === activeSid) return;
+  if (!confirm('تفعيل «' + name + '» لجميع الأجهزة؟ ستظهر عند الجميع، وستُسجَّل الإرسالات الجديدة عليها.')) { e.target.value = activeSid; return; }
+  await db.ref('meta/activeSession').set(id);   // يصل لكل الأجهزة فوراً
+};
 
 let ref = null;
 function listen() {
@@ -207,6 +214,7 @@ function renderRecent() {
 // ---- لوحة المراقبة ----
 function render() {
   renderRecent();
+  $('curS').textContent = 'الصبة الحالية: ' + ((window.sessions && window.sessions[activeSid] && window.sessions[activeSid].name) || '...');
   const list = Object.values(deliveries).sort((a,b) => b.ts - a.ts);
   const by = {}; SITES.forEach(s => by[s] = {q:0,c:0,t:0});
   list.forEach(d => { const x = by[d.site] || (by[d.site] = {q:0,c:0,t:0}); x.q += d.qty; x.c++; x.t = Math.max(x.t, d.ts); });

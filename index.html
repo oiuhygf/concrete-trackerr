@@ -45,8 +45,9 @@ th,td{border:2px solid #000;padding:8px;text-align:center}th{background:var(--mi
 .tools{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
 .tools .b{font-size:17px;padding:10px 14px}
 .hide{display:none}
+.ph{display:none;font-size:18px;margin-bottom:8px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-@media print{header,.tools,#sv{display:none}body{background:#fff;font-size:14px}}
+@media print{.ph{display:block}header,.tools,#sv{display:none}body{background:#fff;font-size:14px}}
 </style>
 </head>
 <body>
@@ -74,10 +75,12 @@ th,td{border:2px solid #000;padding:8px;text-align:center}th{background:var(--mi
 <section id="dv" class="hide">
   <div class="tools">
     <select id="sess" style="width:auto;font-size:17px"></select>
+    <select id="fs" style="width:auto;font-size:17px" aria-label="تصفية حسب المضخة"></select>
     <button class="b" id="newS">➕ صبة جديدة</button>
     <button class="b" id="csv">⬇️ Excel (CSV)</button>
     <button class="b" id="pdf">🖨️ PDF / طباعة</button>
   </div>
+  <div class="ph" id="ph"></div>
   <div class="big"><div class="m" id="sname"></div><span class="n" id="tot">0</span><span class="u">م³</span><div class="m">إجمالي <span id="cnt">0</span> سيارة وصلت</div></div>
   <div class="grid cards" id="cards"></div>
   <h2>السجل المباشر</h2>
@@ -90,7 +93,6 @@ th,td{border:2px solid #000;padding:8px;text-align:center}th{background:var(--mi
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 // ===== الإعدادات: ضع بيانات مشروعك من Firebase هنا =====
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCloEOgcNac0LgrZyktaId_IARNgeIoLhs",
   authDomain: "concrete-tracker-6c9fd.firebaseapp.com",
@@ -100,7 +102,6 @@ const firebaseConfig = {
   appId: "1:749008210469:web:3df56985c3d354ca3f4dcc",
   measurementId: "G-R5MSKPB3VF"
 };
-
 const SITES = ["مضخة 1", "مضخة 2", "مضخة 3"];   // عدّل الأسماء أو أضف مواقع
 const QTYS = [8, 9, 10, 12];
 // ======================================================
@@ -111,6 +112,7 @@ const ls = {get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(
 const fmtT = t => new Date(t).toLocaleString('ar-IQ',{hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit'});
 const num = n => (Math.round(n*100)/100).toLocaleString('en');
 
+let fSite = 'all';
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 let activeSid = ls.get('activeSid', null), viewSid = null, deliveries = {}, online = false, site = SITES[0], qty = null;
@@ -215,13 +217,16 @@ function renderRecent() {
 function render() {
   renderRecent();
   $('curS').textContent = 'الصبة الحالية: ' + ((window.sessions && window.sessions[activeSid] && window.sessions[activeSid].name) || '...');
-  const list = Object.values(deliveries).sort((a,b) => b.ts - a.ts);
+  const all = Object.values(deliveries).sort((a,b) => b.ts - a.ts);
+  const list = fSite === 'all' ? all : all.filter(d => d.site === fSite);
   const by = {}; SITES.forEach(s => by[s] = {q:0,c:0,t:0});
-  list.forEach(d => { const x = by[d.site] || (by[d.site] = {q:0,c:0,t:0}); x.q += d.qty; x.c++; x.t = Math.max(x.t, d.ts); });
+  all.forEach(d => { const x = by[d.site] || (by[d.site] = {q:0,c:0,t:0}); x.q += d.qty; x.c++; x.t = Math.max(x.t, d.ts); });
   $('tot').textContent = num(list.reduce((a,d) => a + d.qty, 0)); $('cnt').textContent = list.length;
-  $('sname').textContent = (window.sessions && viewSid && window.sessions[viewSid.id]?.name) || '';
-  const sum = list.reduce((a,d) => a + d.qty, 0) || 1;
-  $('cards').innerHTML = Object.entries(by).map(([s,x]) =>
+  const sn = (window.sessions && viewSid && window.sessions[viewSid.id]?.name) || '', fn = fSite === 'all' ? 'جميع المضخات' : fSite;
+  $('sname').textContent = sn + ' — ' + fn;
+  $('ph').textContent = 'تقرير: ' + sn + ' | ' + fn + ' | ' + new Date().toLocaleString('ar-IQ');
+  const sum = all.reduce((a,d) => a + d.qty, 0) || 1;
+  $('cards').innerHTML = Object.entries(by).filter(([s]) => fSite === 'all' || s === fSite).map(([s,x]) =>
     `<div class="card"><div class="t">${esc(s)}</div><div class="n">${num(x.q)} م³</div><div class="bar"><i style="width:${Math.round(x.q/sum*100)}%"></i></div><div>${x.c} سيارة</div><div>آخر وصول: ${x.t ? fmtT(x.t) : '—'}</div></div>`).join('');
   $('log').innerHTML = list.map(d => `<tr><td>${fmtT(d.ts)}</td><td>${esc(d.site)}</td><td>${num(d.qty)}</td><td>${esc(d.sender)}</td></tr>`).join('');
 }
@@ -229,12 +234,14 @@ function render() {
 // ---- التصدير ----
 $('csv').onclick = () => {
   const rows = [['الوقت','الموقع','الكمية م3','المراقب','الجهاز']].concat(
-    Object.values(deliveries).sort((a,b) => a.ts - b.ts).map(d => [new Date(d.ts).toLocaleString('en-GB'), d.site, d.qty, d.sender, d.device]));
+    Object.values(deliveries).filter(d => fSite === 'all' || d.site === fSite).sort((a,b) => a.ts - b.ts).map(d => [new Date(d.ts).toLocaleString('en-GB'), d.site, d.qty, d.sender, d.device]));
   const csv = '\ufeff' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
-  a.download = 'concrete-report.csv'; a.click();
+  a.download = 'concrete-report-' + (fSite === 'all' ? 'all' : fSite) + '.csv'; a.click();
 };
 $('pdf').onclick = () => window.print();
+$('fs').innerHTML = '<option value="all">كل المضخات</option>' + SITES.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
+$('fs').onchange = e => { fSite = e.target.value; render(); };
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 lbl(); renderRecent();

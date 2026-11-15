@@ -83,6 +83,7 @@ th,td{border:2px solid #000;padding:8px;text-align:center}th{background:var(--mi
     <button class="b" id="rnB">🛠️ إدارة المجهزين</button>
     <button class="b" id="cdB">🔑 الرموز</button>
     <button class="b" id="newS">➕ صبة جديدة</button>
+    <button class="b" id="delS" style="color:var(--bad)">🗑️ حذف الصبة</button>
     <button class="b" id="csv">⬇️ Excel (CSV)</button>
     <button class="b" id="pdf">🖨️ PDF / طباعة</button>
   </div>
@@ -91,7 +92,7 @@ th,td{border:2px solid #000;padding:8px;text-align:center}th{background:var(--mi
   <div class="ph" id="ph"></div>
   <div class="big"><div class="m" id="sname"></div><span class="n" id="tot">0</span><span class="u">م³</span><div class="m dt">إجمالي <span id="cnt">0</span> سيارة وصلت</div></div>
   <div class="grid cards" id="cards"></div>
-  <button class="b lkonly" id="ul" style="width:100%;margin-top:14px">🔓 عرض التفاصيل (برمز الدخول)</button>
+  <button class="b lkonly" id="ul" style="width:100%;margin-top:14px">🔓 عرض التفاصيل (رمز المدير)</button>
   <h2 class="dt">السجل المباشر</h2>
   <div class="dt" style="overflow-x:auto"><table><thead><tr><th>الوقت</th><th>المجهز</th><th>الكمية</th><th>المراقب</th></tr></thead><tbody id="log"></tbody></table></div>
 </section>
@@ -135,7 +136,7 @@ function showTab(v) {
   ['sv','dv'].forEach(i => $(i).classList.toggle('hide', i !== v));
 }
 document.querySelectorAll('.tab[data-v]').forEach(b => b.onclick = async () => { if (b.dataset.v === 'sv' && !(await needObs())) return; showTab(b.dataset.v); });
-$('ul').onclick = async () => { if (await needObs()) render(); };
+$('ul').onclick = async () => { if (await needMgr()) render(); };
 $('lock').onclick = () => { ls.set('cred', null); setRole(); showTab('dv'); };
 
 // ---- الرموز ----
@@ -284,7 +285,7 @@ function renderRecent() {
 
 // ---- لوحة المراقبة ----
 function render() {
-  const lk = !(authOk && (role || !authH.o)); document.body.classList.toggle('lk', lk);
+  const lk = !(authOk && (role === 'manager' || !authH.m)); document.body.classList.toggle('lk', lk);
   const f = lk ? 'all' : fSite;   // قبل إدخال الرمز: عرض مختصر فقط
   renderRecent();
   $('curS').textContent = 'الصبة الحالية: ' + ((window.sessions && window.sessions[activeSid] && window.sessions[activeSid].name) || '...');
@@ -333,6 +334,24 @@ $('rnS').onclick = async () => {
   }
   try { await db.ref('meta').update({siteList: draft.map(d => d.id), names: Object.keys(out).length ? out : null}); $('rn').classList.add('hide'); }
   catch (e) { alert('تعذر الحفظ: ' + e.message); }
+};
+$('delS').onclick = async () => {
+  if (!(await needMgr())) return;
+  if (!online) return alert('تحتاج اتصالاً بالإنترنت');
+  if (!viewSid) return;
+  const sid = viewSid.id, name = ((window.sessions || {})[sid] || {}).name || '';
+  const a = 10 + Math.floor(Math.random() * 40), b = 10 + Math.floor(Math.random() * 40);
+  const ans = prompt(`⚠️ سيُحذف «${name}» بكل عملياته نهائياً ولا يمكن التراجع.\nللتأكيد أجب: ${a} + ${b} = ؟`);
+  if (ans === null) return;
+  const n = parseInt(String(ans).trim().replace(/[٠-٩]/g, c => '٠١٢٣٤٥٦٧٨٩'.indexOf(c)), 10);
+  if (n !== a + b) return alert('الإجابة غير صحيحة، لم يُحذف شيء');
+  try {
+    const others = Object.entries(window.sessions || {}).filter(([id]) => id !== sid).sort((x, y) => y[1].startedAt - x[1].startedAt);
+    if (others.length) await db.ref('meta/activeSession').set(others[0][0]); else await newSession('الصبة الأولى');
+    await db.ref('deliveries/' + sid).remove();
+    await db.ref('sessions/' + sid).remove();
+    alert('تم حذف الصبة');
+  } catch (e) { alert('تعذر الحذف: ' + e.message + '\nتأكد من نشر قواعد Firebase الجديدة'); }
 };
 $('cdB').onclick = async () => { if (!(await needMgr())) return; $('cd').classList.toggle('hide'); };
 $('cdS').onclick = async () => {

@@ -63,11 +63,9 @@ th,td{border:2px solid #000;padding:8px;text-align:center}th{background:var(--mi
 <main>
 <section id="sv" class="hide">
   <div class="row" id="curS"></div>
-  <h2>اسم المراقب / رقم الجهاز</h2>
-  <input id="who" placeholder="مثال: أحمد - مضخة 1">
-  <h2>اسم المجهز</h2>
-  <input id="sup" list="supl" maxlength="40" placeholder="مثال: شركة ... للكونكريت"><datalist id="supl"></datalist>
-  <h2>الموقع / المضخة</h2>
+  <h2>اسم المراقب</h2>
+  <input id="who" placeholder="اكتب اسمك">
+  <h2>المجهز</h2>
   <div class="grid sites" id="sites"></div>
   <h2>الكمية (م³)</h2>
   <div class="grid qtys" id="qtys"></div>
@@ -80,14 +78,14 @@ th,td{border:2px solid #000;padding:8px;text-align:center}th{background:var(--mi
 <section id="dv">
   <div class="tools">
     <select id="sess" style="width:auto;font-size:17px"></select>
-    <select id="fs" style="width:auto;font-size:17px" aria-label="تصفية حسب المضخة"></select>
-    <button class="b" id="rnB">🛠️ إدارة المضخات</button>
+    <select id="fs" style="width:auto;font-size:17px" aria-label="تصفية حسب المجهز"></select>
+    <button class="b" id="rnB">🛠️ إدارة المجهزين</button>
     <button class="b" id="cdB">🔑 الرموز</button>
     <button class="b" id="newS">➕ صبة جديدة</button>
     <button class="b" id="csv">⬇️ Excel (CSV)</button>
     <button class="b" id="pdf">🖨️ PDF / طباعة</button>
   </div>
-  <div id="rn" class="card hide" style="margin-bottom:12px"><div id="rnf" class="grid"></div><div class="tools"><button class="b" id="rnA">➕ إضافة مضخة</button><button class="b" id="rnS">💾 حفظ</button><button class="b" id="rnC">إغلاق</button></div></div>
+  <div id="rn" class="card hide" style="margin-bottom:12px"><div id="rnf" class="grid"></div><div class="tools"><button class="b" id="rnA">➕ إضافة مجهز</button><button class="b" id="rnS">💾 حفظ</button><button class="b" id="rnC">إغلاق</button></div></div>
   <div id="cd" class="card hide" style="margin-bottom:12px"><label>رمز المراقبين الجديد<input id="cdo" type="password" autocomplete="off" placeholder="اتركه فارغاً بدون تغيير"></label><label>رمز المدير الجديد<input id="cdm" type="password" autocomplete="off" placeholder="اتركه فارغاً بدون تغيير"></label><div class="tools"><button class="b" id="cdS">💾 حفظ الرموز</button><button class="b" id="cdX">إلغاء رمز المراقبين</button></div></div>
   <div class="ph" id="ph"></div>
   <div class="big"><div class="m" id="sname"></div><span class="n" id="tot">0</span><span class="u">م³</span><div class="m">إجمالي <span id="cnt">0</span> سيارة وصلت</div></div>
@@ -234,7 +232,7 @@ function drawSites() {
 }
 drawSites();
 function drawFilter() {
-  $('fs').innerHTML = '<option value="all">كل المضخات</option>' + siteList.map(x => `<option value="${esc(x)}">${esc(nm(x))}</option>`).join('');
+  $('fs').innerHTML = '<option value="all">كل المجهزين</option>' + siteList.map(x => `<option value="${esc(x)}">${esc(nm(x))}</option>`).join('');
   $('fs').value = fSite;
 }
 $('qtys').innerHTML = QTYS.map(q => `<button class="b" data-q="${q}">+${q}</button>`).join('');
@@ -245,17 +243,13 @@ $('qtys').onclick = e => { const b = e.target.closest('button'); if (!b) return;
 $('custom').oninput = e => { qty = parseFloat(e.target.value) || null; lbl(); [...$('qtys').children].forEach(x => x.classList.remove('sel')); };
 
 function lbl(){ if(!$('send').disabled) $('send').textContent = qty ? `إرسال ${num(qty)} م³ — ${nm(site)}` : 'اختر الكمية'; }
-$('sup').value = ls.get('sup', ''); $('sup').oninput = e => ls.set('sup', e.target.value);
-function drawSup() { $('supl').innerHTML = ls.get('sups', []).map(x => `<option value="${esc(x)}">`).join(''); }
-drawSup();
 // ---- الإرسال + الطابور المحلي ----
 $('send').onclick = () => {
   if (!qty || qty <= 0 || qty > 100) return alert('اختر الكمية أولاً');
   const sid = activeSid || ls.get('activeSid', null);
   if (!sid) return alert('لم يتم تحميل الصبة الحالية بعد، تأكد من الاتصال لأول مرة');
   const id = db.ref().push().key;
-  const item = {id, sid, site, qty, ts: Date.now(), device, sender: $('who').value.trim() || device, supplier: $('sup').value.trim()};
-  if (item.supplier) { const L = [item.supplier, ...ls.get('sups', []).filter(x => x !== item.supplier)].slice(0, 20); ls.set('sups', L); drawSup(); }
+  const item = {id, sid, site, qty, ts: Date.now(), device, sender: $('who').value.trim() || device};
   ls.set('q', [...ls.get('q', []), item]);
   ls.set('recent', [item, ...ls.get('recent', [])].slice(0, 5));
   qty = null; $('custom').value = ''; [...$('qtys').children].forEach(x => x.classList.remove('sel'));
@@ -293,19 +287,19 @@ function render() {
   const by = {}; siteList.forEach(s => by[s] = {q:0,c:0,t:0});
   all.forEach(d => { const x = by[d.site] || (by[d.site] = {q:0,c:0,t:0}); x.q += d.qty; x.c++; x.t = Math.max(x.t, d.ts); });
   $('tot').textContent = num(list.reduce((a,d) => a + d.qty, 0)); $('cnt').textContent = list.length;
-  const sn = (window.sessions && viewSid && window.sessions[viewSid.id]?.name) || '', fn = fSite === 'all' ? 'جميع المضخات' : nm(fSite);
+  const sn = (window.sessions && viewSid && window.sessions[viewSid.id]?.name) || '', fn = fSite === 'all' ? 'جميع المجهزين' : nm(fSite);
   $('sname').textContent = sn + ' — ' + fn;
   $('ph').textContent = 'تقرير: ' + sn + ' | ' + fn + ' | ' + new Date().toLocaleString('ar-IQ');
   const sum = all.reduce((a,d) => a + d.qty, 0) || 1;
   $('cards').innerHTML = Object.entries(by).filter(([s]) => fSite === 'all' || s === fSite).map(([s,x]) =>
     `<div class="card"><div class="t">${esc(nm(s))}</div><div class="n">${num(x.q)} م³</div><div class="bar"><i style="width:${Math.round(x.q/sum*100)}%"></i></div><div>${x.c} سيارة</div><div>آخر وصول: ${x.t ? fmtT(x.t) : '—'}</div></div>`).join('');
-  $('log').innerHTML = list.map(d => `<tr><td>${fmtT(d.ts)}</td><td>${esc(d.supplier || '—')}</td><td>${num(d.qty)}</td><td>${esc(d.sender)}</td></tr>`).join('');
+  $('log').innerHTML = list.map(d => `<tr><td>${fmtT(d.ts)}</td><td>${esc(nm(d.site))}</td><td>${num(d.qty)}</td><td>${esc(d.sender)}</td></tr>`).join('');
 }
 
 // ---- التصدير ----
 $('csv').onclick = () => {
-  const rows = [['الوقت','المضخة','المجهز','الكمية م3','المراقب','الجهاز']].concat(
-    Object.values(deliveries).filter(d => fSite === 'all' || d.site === fSite).sort((a,b) => a.ts - b.ts).map(d => [new Date(d.ts).toLocaleString('en-GB'), nm(d.site), d.supplier || '', d.qty, d.sender, d.device]));
+  const rows = [['الوقت','المجهز','الكمية م3','المراقب','الجهاز']].concat(
+    Object.values(deliveries).filter(d => fSite === 'all' || d.site === fSite).sort((a,b) => a.ts - b.ts).map(d => [new Date(d.ts).toLocaleString('en-GB'), nm(d.site), d.qty, d.sender, d.device]));
   const csv = '\ufeff' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
   a.download = 'concrete-report-' + (fSite === 'all' ? 'all' : nm(fSite)) + '.csv'; a.click();
@@ -317,9 +311,9 @@ function drawRn() {
 $('rnB').onclick = async () => { if (!(await needMgr())) return; draft = siteList.map(id => ({id, name: nm(id)})); drawRn(); $('rn').classList.toggle('hide'); };
 $('rnf').oninput = e => { const i = e.target.dataset.i; if (i !== undefined) draft[i].name = e.target.value; };
 $('rnf').onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return;
-  if (draft.length <= 1) return alert('يجب أن تبقى مضخة واحدة على الأقل');
-  if (confirm('حذف هذه المضخة؟ تبقى عملياتها القديمة في السجل.')) { draft.splice(+b.dataset.d, 1); drawRn(); } };
-$('rnA').onclick = () => { draft.push({id: 'p' + Date.now().toString(36), name: 'مضخة جديدة'}); drawRn(); };
+  if (draft.length <= 1) return alert('يجب أن يبقى مجهز واحد على الأقل');
+  if (confirm('حذف هذا المجهز؟ تبقى عملياتها القديمة في السجل.')) { draft.splice(+b.dataset.d, 1); drawRn(); } };
+$('rnA').onclick = () => { draft.push({id: 'p' + Date.now().toString(36), name: 'مجهز جديد'}); drawRn(); };
 $('rnC').onclick = () => $('rn').classList.add('hide');
 $('rnS').onclick = async () => {
   if (!online) return alert('تحتاج اتصالاً بالإنترنت للحفظ');

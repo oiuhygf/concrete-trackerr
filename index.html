@@ -44,24 +44,29 @@ table{width:100%;border-collapse:collapse;background:var(--paper)}
 th,td{border:2px solid #000;padding:8px;text-align:center}th{background:var(--mix)}
 .tools{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
 .tools .b{font-size:17px;padding:10px 14px}
-.hide{display:none}
+.gate{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}.gate .card{width:100%;max-width:380px}
+.rw{display:flex;gap:8px}.rw .del{padding:8px 14px;font-size:20px}
+.hide,.gate.hide{display:none}
 .ph{display:none;font-size:18px;margin-bottom:8px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-@media print{.ph{display:block}header,.tools,#sv,#rn{display:none}body{background:#fff;font-size:14px}}
+@media print{.ph{display:block}header,.tools,#sv,#rn,#cd,#gate{display:none}body{background:#fff;font-size:14px}}
 </style>
 </head>
 <body>
 <header>
   <h1>متابعة الكونكريت</h1>
   <span id="net">متصل</span>
-  <button class="tab on" data-v="sv">المراقب</button>
-  <button class="tab" data-v="dv">اللوحة</button>
+  <button class="tab on" data-v="dv">اللوحة</button>
+  <button class="tab" data-v="sv">المراقب</button>
+  <button class="tab" id="lock" hidden>🔒 خروج</button>
 </header>
 <main>
-<section id="sv">
+<section id="sv" class="hide">
   <div class="row" id="curS"></div>
   <h2>اسم المراقب / رقم الجهاز</h2>
   <input id="who" placeholder="مثال: أحمد - مضخة 1">
+  <h2>اسم المجهز</h2>
+  <input id="sup" list="supl" maxlength="40" placeholder="مثال: شركة ... للكونكريت"><datalist id="supl"></datalist>
   <h2>الموقع / المضخة</h2>
   <div class="grid sites" id="sites"></div>
   <h2>الكمية (م³)</h2>
@@ -72,24 +77,27 @@ th,td{border:2px solid #000;padding:8px;text-align:center}th{background:var(--mi
   <div id="recent"></div>
 </section>
 
-<section id="dv" class="hide">
+<section id="dv">
   <div class="tools">
     <select id="sess" style="width:auto;font-size:17px"></select>
     <select id="fs" style="width:auto;font-size:17px" aria-label="تصفية حسب المضخة"></select>
-    <button class="b" id="rnB">✏️ تسمية المضخات</button>
+    <button class="b" id="rnB">🛠️ إدارة المضخات</button>
+    <button class="b" id="cdB">🔑 الرموز</button>
     <button class="b" id="newS">➕ صبة جديدة</button>
     <button class="b" id="csv">⬇️ Excel (CSV)</button>
     <button class="b" id="pdf">🖨️ PDF / طباعة</button>
   </div>
-  <div id="rn" class="card hide" style="margin-bottom:12px"><div class="grid sites" id="rnf"></div><div class="tools"><button class="b" id="rnS">💾 حفظ الأسماء</button><button class="b" id="rnC">إلغاء</button></div></div>
+  <div id="rn" class="card hide" style="margin-bottom:12px"><div id="rnf" class="grid"></div><div class="tools"><button class="b" id="rnA">➕ إضافة مضخة</button><button class="b" id="rnS">💾 حفظ</button><button class="b" id="rnC">إغلاق</button></div></div>
+  <div id="cd" class="card hide" style="margin-bottom:12px"><label>رمز المراقبين الجديد<input id="cdo" type="password" autocomplete="off" placeholder="اتركه فارغاً بدون تغيير"></label><label>رمز المدير الجديد<input id="cdm" type="password" autocomplete="off" placeholder="اتركه فارغاً بدون تغيير"></label><div class="tools"><button class="b" id="cdS">💾 حفظ الرموز</button><button class="b" id="cdX">إلغاء رمز المراقبين</button></div></div>
   <div class="ph" id="ph"></div>
   <div class="big"><div class="m" id="sname"></div><span class="n" id="tot">0</span><span class="u">م³</span><div class="m">إجمالي <span id="cnt">0</span> سيارة وصلت</div></div>
   <div class="grid cards" id="cards"></div>
   <h2>السجل المباشر</h2>
-  <div style="overflow-x:auto"><table><thead><tr><th>الوقت</th><th>الموقع</th><th>الكمية</th><th>المراقب</th></tr></thead><tbody id="log"></tbody></table></div>
+  <div style="overflow-x:auto"><table><thead><tr><th>الوقت</th><th>المجهز</th><th>الكمية</th><th>المراقب</th></tr></thead><tbody id="log"></tbody></table></div>
 </section>
 </main>
 
+<div id="gate" class="gate hide"><div class="card"><h2 id="gt"></h2><input id="gp" type="password" autocomplete="off" placeholder="الرمز"><div class="tools"><button class="b" id="gok">دخول</button><button class="b" id="gx">إلغاء</button></div></div></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -114,7 +122,7 @@ const ls = {get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(
 const fmtT = t => new Date(t).toLocaleString('ar-IQ',{hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit'});
 const num = n => (Math.round(n*100)/100).toLocaleString('en');
 
-let fSite = 'all', names = {};
+let fSite = 'all', names = {}, siteList = SITES.slice(), authH = {}, authOk = false, role = null;
 const nm = id => names[id] || id;   // الاسم المعروض للمضخة (المعرّف الأصلي يبقى ثابتاً في البيانات)
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
@@ -122,10 +130,54 @@ let activeSid = ls.get('activeSid', null), viewSid = null, deliveries = {}, onli
 const device = ls.get('device', null) || (()=>{const d='D'+Math.random().toString(36).slice(2,6).toUpperCase();ls.set('device',d);return d})();
 
 // ---- تبويبات ----
-document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
-  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === b));
-  ['sv','dv'].forEach(v => $(v).classList.toggle('hide', v !== b.dataset.v));
-});
+function showTab(v) {
+  document.querySelectorAll('.tab[data-v]').forEach(x => x.classList.toggle('on', x.dataset.v === v));
+  ['sv','dv'].forEach(i => $(i).classList.toggle('hide', i !== v));
+}
+document.querySelectorAll('.tab[data-v]').forEach(b => b.onclick = async () => { if (b.dataset.v === 'sv' && !(await needObs())) return; showTab(b.dataset.v); });
+$('lock').onclick = () => { ls.set('cred', null); setRole(); showTab('dv'); };
+
+// ---- الرموز ----
+async function hash(c) {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('ct1|' + c));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+function setRole() {
+  const h = ls.get('cred', null);
+  role = h && h === authH.m ? 'manager' : h && h === authH.o ? 'observer' : null;
+  $('lock').hidden = !role;
+  if (!role && authH.o && !$('sv').classList.contains('hide')) showTab('dv');
+}
+function gate(title, mode) {
+  return new Promise(res => {
+    $('gt').textContent = title; $('gp').value = ''; $('gate').classList.remove('hide'); $('gp').focus();
+    const done = v => { $('gate').classList.add('hide'); res(v); };
+    $('gok').onclick = () => { const v = $('gp').value.trim(); if (!v) return; if (mode === 'set' && v.length < 4) return alert('الرمز 4 خانات على الأقل'); done(v); };
+    $('gx').onclick = () => done(null);
+    $('gp').onkeydown = e => { if (e.key === 'Enter') $('gok').click(); };
+  });
+}
+async function needObs() {
+  if (!authOk) { alert('انتظر اتصال التطبيق ثم أعد المحاولة'); return false; }
+  if (role || !authH.o) return true;
+  const c = await gate('رمز الدخول', 'enter'); if (!c) return false;
+  const h = await hash(c);
+  if (h !== authH.o && h !== authH.m) { alert('الرمز غير صحيح'); return false; }
+  ls.set('cred', h); setRole(); return true;
+}
+async function needMgr() {
+  if (!authOk) { alert('انتظر اتصال التطبيق ثم أعد المحاولة'); return false; }
+  if (role === 'manager') return true;
+  if (!authH.m) {
+    const c = await gate('أول استخدام: حدّد رمز المدير', 'set'); if (!c) return false;
+    const h = await hash(c); await db.ref('meta/auth/m').set(h); ls.set('cred', h); authH.m = h; setRole(); return true;
+  }
+  const c = await gate('رمز المدير', 'enter'); if (!c) return false;
+  const h = await hash(c);
+  if (h !== authH.m) { alert('الرمز غير صحيح'); return false; }
+  ls.set('cred', h); setRole(); return true;
+}
+
 
 // ---- الدخول والجلسة ----
 firebase.auth().signInAnonymously().catch(e => alert('فشل تسجيل الدخول: ' + e.message));
@@ -147,6 +199,7 @@ db.ref('sessions').on('value', s => {
   window.sessions = v; render();
 });
 $('sess').onchange = async e => {
+  if (e.target.value !== activeSid && !(await needMgr())) { e.target.value = activeSid; return; }
   const id = e.target.value, name = (window.sessions[id] || {}).name || '';
   if (id === activeSid) return;
   if (!confirm('تفعيل «' + name + '» لجميع الأجهزة؟ ستظهر عند الجميع، وستُسجَّل الإرسالات الجديدة عليها.')) { e.target.value = activeSid; return; }
@@ -154,6 +207,8 @@ $('sess').onchange = async e => {
 };
 
 db.ref('meta/names').on('value', s => { names = s.val() || {}; drawSites(); drawFilter(); lbl(); render(); });
+db.ref('meta/auth').on('value', s => { authH = s.val() || {}; authOk = true; setRole(); });
+db.ref('meta/siteList').on('value', s => { const v = s.val(); siteList = v ? Object.values(v) : SITES.slice(); if (!siteList.includes(site)) site = siteList[0]; drawSites(); drawFilter(); lbl(); render(); });
 let ref = null;
 function listen() {
   if (ref) ref.off();
@@ -166,6 +221,7 @@ async function newSession(name) {
   await db.ref('meta/activeSession').set(id);
 }
 $('newS').onclick = async () => {
+  if (!(await needMgr())) return;
   if (!confirm('بدء صبة جديدة؟ ستُؤرشف البيانات الحالية وتبدأ العدادات من الصفر.')) return;
   const n = prompt('اسم الصبة:', 'صبة ' + new Date().toLocaleDateString('ar-IQ'));
   if (n) { viewSid = null; await newSession(n); }
@@ -174,11 +230,11 @@ $('newS').onclick = async () => {
 // ---- واجهة المراقب ----
 $('who').value = ls.get('who', ''); $('who').oninput = e => ls.set('who', e.target.value);
 function drawSites() {
-  $('sites').innerHTML = SITES.map(id => `<button class="b${id===site?' sel':''}" data-s="${esc(id)}">${esc(nm(id))}</button>`).join('');
+  $('sites').innerHTML = siteList.map(id => `<button class="b${id===site?' sel':''}" data-s="${esc(id)}">${esc(nm(id))}</button>`).join('');
 }
 drawSites();
 function drawFilter() {
-  $('fs').innerHTML = '<option value="all">كل المضخات</option>' + SITES.map(x => `<option value="${esc(x)}">${esc(nm(x))}</option>`).join('');
+  $('fs').innerHTML = '<option value="all">كل المضخات</option>' + siteList.map(x => `<option value="${esc(x)}">${esc(nm(x))}</option>`).join('');
   $('fs').value = fSite;
 }
 $('qtys').innerHTML = QTYS.map(q => `<button class="b" data-q="${q}">+${q}</button>`).join('');
@@ -189,13 +245,17 @@ $('qtys').onclick = e => { const b = e.target.closest('button'); if (!b) return;
 $('custom').oninput = e => { qty = parseFloat(e.target.value) || null; lbl(); [...$('qtys').children].forEach(x => x.classList.remove('sel')); };
 
 function lbl(){ if(!$('send').disabled) $('send').textContent = qty ? `إرسال ${num(qty)} م³ — ${nm(site)}` : 'اختر الكمية'; }
+$('sup').value = ls.get('sup', ''); $('sup').oninput = e => ls.set('sup', e.target.value);
+function drawSup() { $('supl').innerHTML = ls.get('sups', []).map(x => `<option value="${esc(x)}">`).join(''); }
+drawSup();
 // ---- الإرسال + الطابور المحلي ----
 $('send').onclick = () => {
   if (!qty || qty <= 0 || qty > 100) return alert('اختر الكمية أولاً');
   const sid = activeSid || ls.get('activeSid', null);
   if (!sid) return alert('لم يتم تحميل الصبة الحالية بعد، تأكد من الاتصال لأول مرة');
   const id = db.ref().push().key;
-  const item = {id, sid, site, qty, ts: Date.now(), device, sender: $('who').value.trim() || device};
+  const item = {id, sid, site, qty, ts: Date.now(), device, sender: $('who').value.trim() || device, supplier: $('sup').value.trim()};
+  if (item.supplier) { const L = [item.supplier, ...ls.get('sups', []).filter(x => x !== item.supplier)].slice(0, 20); ls.set('sups', L); drawSup(); }
   ls.set('q', [...ls.get('q', []), item]);
   ls.set('recent', [item, ...ls.get('recent', [])].slice(0, 5));
   qty = null; $('custom').value = ''; [...$('qtys').children].forEach(x => x.classList.remove('sel'));
@@ -230,7 +290,7 @@ function render() {
   $('curS').textContent = 'الصبة الحالية: ' + ((window.sessions && window.sessions[activeSid] && window.sessions[activeSid].name) || '...');
   const all = Object.values(deliveries).sort((a,b) => b.ts - a.ts);
   const list = fSite === 'all' ? all : all.filter(d => d.site === fSite);
-  const by = {}; SITES.forEach(s => by[s] = {q:0,c:0,t:0});
+  const by = {}; siteList.forEach(s => by[s] = {q:0,c:0,t:0});
   all.forEach(d => { const x = by[d.site] || (by[d.site] = {q:0,c:0,t:0}); x.q += d.qty; x.c++; x.t = Math.max(x.t, d.ts); });
   $('tot').textContent = num(list.reduce((a,d) => a + d.qty, 0)); $('cnt').textContent = list.length;
   const sn = (window.sessions && viewSid && window.sessions[viewSid.id]?.name) || '', fn = fSite === 'all' ? 'جميع المضخات' : nm(fSite);
@@ -239,34 +299,51 @@ function render() {
   const sum = all.reduce((a,d) => a + d.qty, 0) || 1;
   $('cards').innerHTML = Object.entries(by).filter(([s]) => fSite === 'all' || s === fSite).map(([s,x]) =>
     `<div class="card"><div class="t">${esc(nm(s))}</div><div class="n">${num(x.q)} م³</div><div class="bar"><i style="width:${Math.round(x.q/sum*100)}%"></i></div><div>${x.c} سيارة</div><div>آخر وصول: ${x.t ? fmtT(x.t) : '—'}</div></div>`).join('');
-  $('log').innerHTML = list.map(d => `<tr><td>${fmtT(d.ts)}</td><td>${esc(nm(d.site))}</td><td>${num(d.qty)}</td><td>${esc(d.sender)}</td></tr>`).join('');
+  $('log').innerHTML = list.map(d => `<tr><td>${fmtT(d.ts)}</td><td>${esc(d.supplier || '—')}</td><td>${num(d.qty)}</td><td>${esc(d.sender)}</td></tr>`).join('');
 }
 
 // ---- التصدير ----
 $('csv').onclick = () => {
-  const rows = [['الوقت','الموقع','الكمية م3','المراقب','الجهاز']].concat(
-    Object.values(deliveries).filter(d => fSite === 'all' || d.site === fSite).sort((a,b) => a.ts - b.ts).map(d => [new Date(d.ts).toLocaleString('en-GB'), nm(d.site), d.qty, d.sender, d.device]));
+  const rows = [['الوقت','المضخة','المجهز','الكمية م3','المراقب','الجهاز']].concat(
+    Object.values(deliveries).filter(d => fSite === 'all' || d.site === fSite).sort((a,b) => a.ts - b.ts).map(d => [new Date(d.ts).toLocaleString('en-GB'), nm(d.site), d.supplier || '', d.qty, d.sender, d.device]));
   const csv = '\ufeff' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
   a.download = 'concrete-report-' + (fSite === 'all' ? 'all' : nm(fSite)) + '.csv'; a.click();
 };
-$('rnB').onclick = () => {
-  $('rnf').innerHTML = SITES.map((id, k) => `<label>المضخة ${k+1}<input data-id="${esc(id)}" maxlength="30" value="${esc(nm(id))}"></label>`).join('');
-  $('rn').classList.toggle('hide');
-};
+let draft = [];
+function drawRn() {
+  $('rnf').innerHTML = draft.map((d, i) => `<div class="rw"><input data-i="${i}" maxlength="30" value="${esc(d.name)}"><button class="b del" data-d="${i}" aria-label="حذف">🗑️</button></div>`).join('');
+}
+$('rnB').onclick = async () => { if (!(await needMgr())) return; draft = siteList.map(id => ({id, name: nm(id)})); drawRn(); $('rn').classList.toggle('hide'); };
+$('rnf').oninput = e => { const i = e.target.dataset.i; if (i !== undefined) draft[i].name = e.target.value; };
+$('rnf').onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return;
+  if (draft.length <= 1) return alert('يجب أن تبقى مضخة واحدة على الأقل');
+  if (confirm('حذف هذه المضخة؟ تبقى عملياتها القديمة في السجل.')) { draft.splice(+b.dataset.d, 1); drawRn(); } };
+$('rnA').onclick = () => { draft.push({id: 'p' + Date.now().toString(36), name: 'مضخة جديدة'}); drawRn(); };
 $('rnC').onclick = () => $('rn').classList.add('hide');
 $('rnS').onclick = async () => {
-  if (!online) return alert('تحتاج اتصالاً بالإنترنت لحفظ الأسماء');
+  if (!online) return alert('تحتاج اتصالاً بالإنترنت للحفظ');
   const out = {}, seen = new Set();
-  for (const i of $('rnf').querySelectorAll('input')) {
-    const v = i.value.trim();
+  Object.keys(names).forEach(k => { if (!draft.some(d => d.id === k)) out[k] = names[k]; });   // أسماء المضخات المحذوفة تبقى للسجل
+  for (const d of draft) {
+    const v = d.name.trim();
     if (!v) return alert('لا يجوز ترك اسم فارغ');
     if (seen.has(v)) return alert('الأسماء يجب ألا تتكرر');
-    seen.add(v); if (v !== i.dataset.id) out[i.dataset.id] = v;
+    seen.add(v); if (v !== d.id) out[d.id] = v;
   }
-  try { await db.ref('meta/names').set(Object.keys(out).length ? out : null); $('rn').classList.add('hide'); }
+  try { await db.ref('meta').update({siteList: draft.map(d => d.id), names: Object.keys(out).length ? out : null}); $('rn').classList.add('hide'); }
   catch (e) { alert('تعذر الحفظ: ' + e.message); }
 };
+$('cdB').onclick = async () => { if (!(await needMgr())) return; $('cd').classList.toggle('hide'); };
+$('cdS').onclick = async () => {
+  const o = $('cdo').value.trim(), m = $('cdm').value.trim();
+  if (!o && !m) return;
+  if ((o && o.length < 4) || (m && m.length < 4)) return alert('الرمز 4 خانات على الأقل');
+  const u = {}; if (o) u.o = await hash(o); if (m) { u.m = await hash(m); ls.set('cred', u.m); }
+  try { await db.ref('meta/auth').update(u); $('cdo').value = $('cdm').value = ''; $('cd').classList.add('hide'); alert('تم حفظ الرموز'); }
+  catch (e) { alert('تعذر الحفظ: ' + e.message); }
+};
+$('cdX').onclick = async () => { if (confirm('إلغاء رمز المراقبين؟ سيدخل أي شخص تبويب المراقب بدون رمز.')) await db.ref('meta/auth/o').remove(); };
 $('pdf').onclick = () => window.print();
 drawFilter();
 $('fs').onchange = e => { fSite = e.target.value; render(); };

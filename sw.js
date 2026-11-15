@@ -1,4 +1,4 @@
-const C='ct-v2',F=['./','./index.html','./manifest.json'];
+const C='ct-v5',F=['./','./index.html','./manifest.json','./logo.png','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(F))));
 self.addEventListener('activate',e=>e.waitUntil(clients.claim()));
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;

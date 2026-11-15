@@ -3,63 +3,79 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#ff6a00">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#f6f5f1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.json">
 <title>متابعة الكونكريت</title>
 <style>
-:root{--slab:#cdd0d2;--paper:#fff;--ink:#000;--mix:#ff6a00;--ok:#00632b;--bad:#b3001b;--edge:3px solid #000}
+:root{--paper:#f6f5f1;--card:#fff;--ink:#101112;--soft:#2a2a2a;--mute:#6b6b70;--line:#dadadc;--teal:#1daf9c;--teal-d:#178c7d;--tint:#e3f5f1;--red:#d02533}
 *{box-sizing:border-box}
-body{margin:0;background:var(--slab);color:var(--ink);font:700 18px/1.5 "Cairo",Tahoma,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
-header{background:var(--mix);color:#000;padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5;border-bottom:var(--edge)}
-header h1{font-size:22px;font-weight:900;margin:0;flex:1}
-.tab{background:var(--paper);color:#000;border:var(--edge);border-radius:8px;padding:6px 16px;font:inherit;cursor:pointer}
-.tab.on{background:#000;color:#fff}
-#net{font-size:14px;padding:2px 12px;border:var(--edge);border-radius:20px;background:var(--paper);color:var(--ok)}
-#net.off{background:var(--bad);color:#fff}
-main{padding:14px 14px 40px;max-width:1100px;margin:auto}
-:focus-visible{outline:4px solid #000;outline-offset:3px}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.6 "Geist","Noto Sans Arabic",Tahoma,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+header{background:rgba(246,245,241,.92);backdrop-filter:blur(10px);padding:10px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5;border-bottom:1px solid var(--line)}
+header h1{font-size:19px;font-weight:700;margin:0;flex:1;display:flex;align-items:center;gap:10px}
+.lg{height:36px;width:auto;display:block}
+.plogo{height:80px;width:auto;display:block;margin:0 auto 8px}
+.tab{background:transparent;color:var(--soft);border:1px solid transparent;border-radius:999px;padding:6px 16px;font:inherit;font-weight:500;cursor:pointer}
+.tab:hover{background:#ececea}.tab.on{background:var(--ink);color:#fff}
+#net{font-size:13px;padding:2px 12px 2px 10px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--teal-d)}
+#net::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--teal);margin-inline-end:6px}
+#net.off{color:var(--red)}#net.off::before{background:var(--red)}
+main{padding:20px 16px 48px;max-width:1100px;margin:auto}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
 .grid{display:grid;gap:10px}
 .sites{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
 .qtys{grid-template-columns:repeat(4,1fr)}
-button.b{font:inherit;font-size:22px;font-weight:900;padding:16px 6px;border:var(--edge);border-radius:8px;background:var(--paper);color:#000;cursor:pointer;box-shadow:0 5px 0 #000;transition:transform .08s,box-shadow .08s}
-button.b:active{transform:translateY(4px);box-shadow:0 1px 0 #000}
-button.b.sel{background:var(--mix)}
-input,select{font:inherit;font-size:22px;padding:12px;border:var(--edge);border-radius:8px;width:100%;background:var(--paper);color:#000}
-h2{margin:22px 0 8px;font-size:19px;font-weight:900;padding-right:10px;border-right:8px solid var(--mix)}
-#send{display:block;width:100%;font:inherit;font-size:26px;font-weight:900;padding:20px 12px;background:#000;color:#fff;border:0;border-radius:10px;margin:16px 0;cursor:pointer;position:sticky;bottom:10px;box-shadow:0 0 0 5px var(--slab)}
-#send:disabled{background:#666}
-.row{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;background:var(--paper);border:var(--edge);border-radius:8px;margin-bottom:6px}
-.big{background:var(--paper);border:var(--edge);border-bottom:14px solid var(--mix);border-radius:8px;padding:14px 18px;margin-bottom:14px}
-.big .n{font-size:clamp(64px,16vw,120px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums;display:inline-block}
-.big .u{font-size:30px;font-weight:900;margin-inline-start:8px}
-.big .m{font-size:20px}
+button.b{font:inherit;font-size:20px;font-weight:600;padding:16px 8px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);cursor:pointer;transition:background .15s,border-color .15s,transform .08s}
+button.b:hover{border-color:#b9b9bd}button.b:active{transform:scale(.98)}
+button.b.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+input,select{font:inherit;font-size:20px;padding:13px 14px;border:1px solid var(--line);border-radius:14px;width:100%;background:var(--card);color:var(--ink)}
+input:focus,select:focus{border-color:var(--teal);outline:3px solid var(--tint)}
+h2{margin:26px 0 10px;font-size:14px;font-weight:600;color:var(--mute);display:flex;align-items:center;gap:8px}
+h2::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--teal)}
+#send{display:block;width:100%;font:inherit;font-size:21px;font-weight:600;padding:18px 12px;background:var(--ink);color:#fff;border:0;border-radius:999px;margin:18px 0;cursor:pointer;position:sticky;bottom:12px;box-shadow:0 0 0 6px var(--paper)}
+#send:disabled{background:#8a8a8e}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 16px;background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:8px}
+.big{background:var(--tint);border:1px solid #cfe9e3;border-radius:28px;padding:22px 24px;margin-bottom:16px}
+.big .n{font-size:clamp(60px,15vw,112px);font-weight:600;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;display:inline-block;border-radius:16px;padding:0 4px}
+.big .u{font-size:26px;font-weight:600;color:var(--teal-d);margin-inline-start:8px}
+.big .m{font-size:16px;color:var(--soft)}
 .cards{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
-.card{background:var(--paper);border:var(--edge);border-radius:8px;padding:12px}
-.card .t{font-size:20px;font-weight:900}
-.card .n{font-size:40px;font-weight:900;line-height:1.2;font-variant-numeric:tabular-nums}
-.bar{height:12px;border:2px solid #000;border-radius:6px;margin:8px 0;overflow:hidden;background:var(--slab)}
-.bar i{display:block;height:100%;background:var(--mix);transition:width .5s}
-table{width:100%;border-collapse:collapse;background:var(--paper)}
-th,td{border:2px solid #000;padding:8px;text-align:center}th{background:var(--mix)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:18px}
+.card .t{font-size:13px;font-weight:600;color:var(--mute)}
+.card .n{font-size:38px;font-weight:600;line-height:1.2;font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:999px;margin:10px 0;overflow:hidden;background:#ececee}
+.bar i{display:block;height:100%;background:var(--teal);border-radius:999px;transition:width .5s}
+table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+th,td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:center}
+th{background:var(--paper);font-size:13px;font-weight:600;color:var(--mute)}tr:last-child td{border-bottom:0}
 .tools{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
-.tools .b{font-size:17px;padding:10px 14px}
-.gate{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}.gate .card{width:100%;max-width:380px}
-.rw{display:flex;gap:8px}.rw .del{padding:8px 14px;font-size:20px}
+.tools .b{font-size:15px;padding:9px 16px;border-radius:999px}
+.tools select{width:auto;font-size:15px;border-radius:999px;padding:9px 14px}
+.ph{display:none;font-size:18px;margin-bottom:8px}
+.gate{position:fixed;inset:0;background:rgba(16,17,18,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.gate .card{width:100%;max-width:380px}
+.rw{display:flex;gap:8px}.rw .del{padding:8px 14px;font-size:18px}
+.un{font-size:14px!important;padding:4px 12px!important;border-radius:999px!important}
+.hc{display:flex;gap:8px;align-items:flex-end;overflow-x:auto;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:20px;min-height:150px}
+.hb{display:flex;flex-direction:column;align-items:center;min-width:56px;justify-content:flex-end}
+.hb i{display:block;width:30px;background:var(--teal);border-radius:8px 8px 3px 3px}.hb small{font-size:12px;color:var(--mute)}
+.po,.sig{display:none}.sig{justify-content:space-between;margin-top:40px}
+#tot{transition:background .6s}#tot.fl{background:#bfeae1}
 .hide,.gate.hide{display:none}
 .lkonly{display:none}body.lk .lkonly{display:block}body.lk .dt{display:none!important}
-.ph{display:none;font-size:18px;margin-bottom:8px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-@media print{.ph{display:block}header,.tools,#sv,#rn,#cd,#gate,.lkonly{display:none!important}body{background:#fff;font-size:14px}}
+@media print{.ph,.po{display:block}.sig{display:flex}.nop,#cards{display:none!important}header,.tools,#sv,#rn,#cd,#gate,.lkonly{display:none!important}body{background:#fff;font-size:14px}.big{background:#fff}}
 </style>
 </head>
 <body>
 <header>
-  <h1>متابعة الكونكريت</h1>
+  <h1><img class="lg" src="logo.png" alt="">متابعة الكونكريت</h1>
   <span id="net">متصل</span>
   <button class="tab on" data-v="dv">اللوحة</button>
   <button class="tab" data-v="sv">المراقب</button>
   <button class="tab" id="lock" hidden>🔒 خروج</button>
+  <button class="tab" id="snd" aria-label="صوت التنبيه">🔔</button>
 </header>
 <main>
 <section id="sv" class="hide">
@@ -84,17 +100,21 @@ th,td{border:2px solid #000;padding:8px;text-align:center}th{background:var(--mi
     <button class="b" id="cdB">🔑 الرموز</button>
     <button class="b" id="newS">➕ صبة جديدة</button>
     <button class="b" id="delS" style="color:var(--bad)">🗑️ حذف الصبة</button>
-    <button class="b" id="csv">⬇️ Excel (CSV)</button>
+    <button class="b" id="csv">⬇️ Excel</button>
+    <button class="b" id="wa">📲 واتساب</button>
     <button class="b" id="pdf">🖨️ PDF / طباعة</button>
   </div>
   <div id="rn" class="card hide dt" style="margin-bottom:12px"><div id="rnf" class="grid"></div><div class="tools"><button class="b" id="rnA">➕ إضافة مجهز</button><button class="b" id="rnS">💾 حفظ</button><button class="b" id="rnC">إغلاق</button></div></div>
   <div id="cd" class="card hide dt" style="margin-bottom:12px"><label>رمز المراقبين الجديد<input id="cdo" type="password" autocomplete="off" placeholder="اتركه فارغاً بدون تغيير"></label><label>رمز المدير الجديد<input id="cdm" type="password" autocomplete="off" placeholder="اتركه فارغاً بدون تغيير"></label><div class="tools"><button class="b" id="cdS">💾 حفظ الرموز</button><button class="b" id="cdX">إلغاء رمز المراقبين</button></div></div>
-  <div class="ph" id="ph"></div>
+  <div class="ph"><img class="plogo" src="logo.png" alt=""><div id="ph" style="text-align:center"></div></div>
+  <div class="po" id="sum"></div>
   <div class="big"><div class="m" id="sname"></div><span class="n" id="tot">0</span><span class="u">م³</span><div class="m dt">إجمالي <span id="cnt">0</span> سيارة وصلت</div></div>
   <div class="grid cards" id="cards"></div>
   <button class="b lkonly" id="ul" style="width:100%;margin-top:14px">🔓 عرض التفاصيل (رمز المدير)</button>
   <h2 class="dt">السجل المباشر</h2>
-  <div class="dt" style="overflow-x:auto"><table><thead><tr><th>الوقت</th><th>المجهز</th><th>الكمية</th><th>المراقب</th></tr></thead><tbody id="log"></tbody></table></div>
+  <div class="dt" style="overflow-x:auto"><table><thead><tr><th>الوقت</th><th>المجهز</th><th>الكمية</th><th>المراقب</th><th class="dt nop"></th></tr></thead><tbody id="log"></tbody></table></div>
+<h2 class="dt nop">الكميات بالساعة</h2><div class="hc dt nop" id="hc"></div>
+  <div class="sig"><span>توقيع المدير: ..........</span><span>توقيع المراقب: ..........</span><span>توقيع المجهز: ..........</span></div>
 </section>
 </main>
 
@@ -113,6 +133,7 @@ const firebaseConfig = {
   appId: "1:749008210469:web:3df56985c3d354ca3f4dcc",
   measurementId: "G-R5MSKPB3VF"
 };
+const COMPANY = "شركة نبع الهادي"
 const SITES = ["مضخة 1", "مضخة 2", "مضخة 3"];   // عدّل الأسماء أو أضف مواقع
 const QTYS = [8, 9, 10, 12];
 // ======================================================
@@ -123,7 +144,7 @@ const ls = {get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(
 const fmtT = t => new Date(t).toLocaleString('ar-IQ',{hour:'2-digit',minute:'2-digit',second:'2-digit',day:'2-digit',month:'2-digit'});
 const num = n => (Math.round(n*100)/100).toLocaleString('en');
 
-let fSite = 'all', names = {}, siteList = SITES.slice(), authH = {}, authOk = false, role = null;
+let fSite = 'all', names = {}, siteList = SITES.slice(), authH = {}, authOk = false, role = null, mgr = false, noSess = false, curList = [], seen = null, AC = null;
 const nm = id => names[id] || id;   // الاسم المعروض للمضخة (المعرّف الأصلي يبقى ثابتاً في البيانات)
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
@@ -137,7 +158,7 @@ function showTab(v) {
 }
 document.querySelectorAll('.tab[data-v]').forEach(b => b.onclick = async () => { if (b.dataset.v === 'sv' && !(await needObs())) return; showTab(b.dataset.v); });
 $('ul').onclick = async () => { if (await needMgr()) render(); };
-$('lock').onclick = () => { ls.set('cred', null); setRole(); showTab('dv'); };
+$('lock').onclick = async () => { ls.set('cred', null); setRole(); showTab('dv'); };
 
 // ---- الرموز ----
 async function hash(c) {
@@ -212,11 +233,20 @@ $('sess').onchange = async e => {
 db.ref('meta/names').on('value', s => { names = s.val() || {}; drawSites(); drawFilter(); lbl(); render(); });
 db.ref('meta/auth').on('value', s => { authH = s.val() || {}; authOk = true; setRole(); });
 db.ref('meta/siteList').on('value', s => { const v = s.val(); siteList = v ? Object.values(v) : SITES.slice(); if (!siteList.includes(site)) site = siteList[0]; drawSites(); drawFilter(); lbl(); render(); });
+function notify() {
+  if ($('dv').classList.contains('hide')) return;
+  if (ls.get('snd', true)) { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const o = AC.createOscillator(), g = AC.createGain(); o.frequency.value = 880; g.gain.value = .3; o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime + .25); } catch (e) {} if (navigator.vibrate) navigator.vibrate(200); }
+  $('tot').classList.add('fl'); setTimeout(() => $('tot').classList.remove('fl'), 1500);
+}
+$('snd').textContent = ls.get('snd', true) ? '🔔' : '🔕';
+$('snd').onclick = () => { ls.set('snd', !ls.get('snd', true)); $('snd').textContent = ls.get('snd', true) ? '🔔' : '🔕'; };
 let ref = null;
 function listen() {
   if (ref) ref.off();
   ref = db.ref('deliveries/' + viewSid.id);
-  ref.on('value', s => { deliveries = s.val() || {}; render(); });
+  seen = null;
+  ref.on('value', s => { deliveries = s.val() || {}; const ks = Object.keys(deliveries);
+    if (seen && ks.some(k => !seen.has(k))) notify(); seen = new Set(ks); render(); });
 }
 async function newSession(name) {
   const id = db.ref('sessions').push().key;
@@ -280,36 +310,66 @@ setInterval(flush, 10000);
 function renderRecent() {
   const pend = new Set(ls.get('q', []).map(x => x.id));
   $('recent').innerHTML = ls.get('recent', []).map(r =>
-    `<div class="row"><span>${pend.has(r.id)?'⏳':'✅'} ${esc(nm(r.site))} — ${num(r.qty)} م³</span><span>${fmtT(r.ts)}</span></div>`).join('') || '<div class="row">لا توجد عمليات</div>';
+    `<div class="row"><span>${pend.has(r.id)?'⏳':'✅'} ${esc(nm(r.site))} — ${num(r.qty)} م³</span><span>${fmtT(r.ts)}${!pend.has(r.id) && Date.now() - r.ts < 120000 ? ` <button class="b un" data-u="${esc(r.id)}">↩️ تراجع</button>` : ''}</span></div>`).join('') || '<div class="row">لا توجد عمليات</div>';
 }
 
+$('recent').onclick = async e => {
+  const b = e.target.closest('[data-u]'); if (!b) return;
+  const it = ls.get('recent', []).find(x => x.id === b.dataset.u);
+  if (!it || !confirm('التراجع عن هذه العملية؟')) return;
+  const q = ls.get('q', []);
+  if (q.some(x => x.id === it.id)) ls.set('q', q.filter(x => x.id !== it.id));
+  else { try { await db.ref(`deliveries/${it.sid}/${it.id}`).remove(); } catch (err) { return alert('انتهت مهلة التراجع، اطلب من المدير الحذف'); } }
+  ls.set('recent', ls.get('recent', []).filter(x => x.id !== it.id)); renderRecent();
+};
+setInterval(renderRecent, 15000);
 // ---- لوحة المراقبة ----
 function render() {
   const lk = !(authOk && (role === 'manager' || !authH.m)); document.body.classList.toggle('lk', lk);
   const f = lk ? 'all' : fSite;   // قبل إدخال الرمز: عرض مختصر فقط
   renderRecent();
   $('curS').textContent = 'الصبة الحالية: ' + ((window.sessions && window.sessions[activeSid] && window.sessions[activeSid].name) || '...');
-  const all = Object.values(deliveries).sort((a,b) => b.ts - a.ts);
+  const all = Object.entries(deliveries).map(([id, d]) => ({...d, id})).sort((a,b) => b.ts - a.ts);
   const list = f === 'all' ? all : all.filter(d => d.site === f);
   const by = {}; siteList.forEach(s => by[s] = {q:0,c:0,t:0});
   all.forEach(d => { const x = by[d.site] || (by[d.site] = {q:0,c:0,t:0}); x.q += d.qty; x.c++; x.t = Math.max(x.t, d.ts); });
   $('tot').textContent = num(list.reduce((a,d) => a + d.qty, 0)); $('cnt').textContent = list.length;
   const sn = (window.sessions && viewSid && window.sessions[viewSid.id]?.name) || '', fn = f === 'all' ? 'جميع المجهزين' : nm(f);
   $('sname').textContent = sn + (f === 'all' ? '' : ' — ' + fn);
-  $('ph').textContent = 'تقرير: ' + sn + ' | ' + fn + ' | ' + new Date().toLocaleString('ar-IQ');
+  $('ph').textContent = COMPANY + ' — تقرير: ' + sn + ' | ' + fn + ' | ' + new Date().toLocaleString('ar-IQ');
   const sum = all.reduce((a,d) => a + d.qty, 0) || 1;
   $('cards').innerHTML = Object.entries(by).filter(([s]) => f === 'all' || s === f).map(([s,x]) =>
     `<div class="card"><div class="t">${esc(nm(s))}</div><div class="n">${num(x.q)} م³</div><div class="bar"><i style="width:${Math.round(x.q/sum*100)}%"></i></div><div class="dt">${x.c} سيارة</div><div class="dt">آخر وصول: ${x.t ? fmtT(x.t) : '—'}</div></div>`).join('');
-  $('log').innerHTML = list.map(d => `<tr><td>${fmtT(d.ts)}</td><td>${esc(nm(d.site))}</td><td>${num(d.qty)}</td><td>${esc(d.sender)}</td></tr>`).join('');
+  curList = list;
+  $('sum').innerHTML = '<table><tr><th>المجهز</th><th>السيارات</th><th>الكمية م³</th></tr>' + Object.keys(by).filter(s => f === 'all' || s === f).map(s => `<tr><td>${esc(nm(s))}</td><td>${list.filter(d => d.site === s).length}</td><td>${num(list.filter(d => d.site === s).reduce((a, d) => a + d.qty, 0))}</td></tr>`).join('') + '</table>';
+  const hr = {}; [...list].reverse().forEach(d => { const k = new Date(d.ts).toLocaleString('en-GB', {day: '2-digit', month: '2-digit', hour: '2-digit', hour12: false}); hr[k] = (hr[k] || 0) + d.qty; });
+  const mx = Math.max(...Object.values(hr), 1);
+  $('hc').innerHTML = Object.entries(hr).map(([k, v]) => `<div class="hb"><b>${num(v)}</b><i style="height:${Math.max(4, v / mx * 100)}px"></i><small>${k}</small></div>`).join('') || 'لا توجد بيانات';
+  $('log').innerHTML = list.map(d => `<tr><td>${fmtT(d.ts)}</td><td>${esc(nm(d.site))}</td><td>${num(d.qty)}</td><td>${esc(d.sender)}</td><td class="dt nop"><button class="b un" data-x="${esc(d.id)}">🗑️</button></td></tr>`).join('');
 }
 
 // ---- التصدير ----
-$('csv').onclick = () => {
-  const rows = [['الوقت','المجهز','الكمية م3','المراقب','الجهاز']].concat(
-    Object.values(deliveries).filter(d => fSite === 'all' || d.site === fSite).sort((a,b) => a.ts - b.ts).map(d => [new Date(d.ts).toLocaleString('en-GB'), nm(d.site), d.qty, d.sender, d.device]));
-  const csv = '\ufeff' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\r\n');
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
-  a.download = 'concrete-report-' + (fSite === 'all' ? 'all' : nm(fSite)) + '.csv'; a.click();
+const cell = v => typeof v === 'number' ? `<Cell><Data ss:Type="Number">${v}</Data></Cell>` : `<Cell><Data ss:Type="String">${esc(v)}</Data></Cell>`;
+const sheet = (n, rows) => `<Worksheet ss:Name="${n}"><Table>${rows.map(r => `<Row>${r.map(cell).join('')}</Row>`).join('')}</Table></Worksheet>`;
+function xlsOf(list) {
+  const L = [...list].sort((a, b) => a.ts - b.ts), g = {};
+  L.forEach(d => { const k = nm(d.site); g[k] = g[k] || [0, 0]; g[k][0]++; g[k][1] += d.qty; });
+  const log = [['الوقت', 'المجهز', 'الكمية م3', 'المراقب', 'الجهاز']].concat(L.map(d => [new Date(d.ts).toLocaleString('en-GB'), nm(d.site), d.qty, d.sender, d.device]));
+  const sm = [['المجهز', 'السيارات', 'الكمية م3']].concat(Object.entries(g).map(([k, v]) => [k, v[0], Math.round(v[1] * 100) / 100]), [['الإجمالي', L.length, Math.round(L.reduce((a, d) => a + d.qty, 0) * 100) / 100]]);
+  return '<?xml version="1.0" encoding="UTF-8"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' + sheet('السجل', log) + sheet('الملخص', sm) + '</Workbook>';
+}
+function dl(n, t) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], {type: 'application/vnd.ms-excel;charset=utf-8'})); a.download = n; a.click(); }
+$('csv').onclick = () => dl('concrete-' + (fSite === 'all' ? 'all' : nm(fSite)) + '.xls', xlsOf(curList));
+$('wa').onclick = () => {
+  const L = Object.values(deliveries), g = {}; L.forEach(d => g[nm(d.site)] = (g[nm(d.site)] || 0) + d.qty);
+  const t = [COMPANY, 'الصبة: ' + ($('sname').textContent.split(' — ')[0]), new Date().toLocaleString('ar-IQ'), 'الإجمالي: ' + num(L.reduce((a, d) => a + d.qty, 0)) + ' م³ (' + L.length + ' سيارة)', ''].concat(Object.entries(g).map(([k, v]) => '• ' + k + ': ' + num(v) + ' م³')).join('\n');
+  window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+};
+$('log').onclick = async e => {
+  const b = e.target.closest('[data-x]'); if (!b || !(await needMgr())) return;
+  const id = b.dataset.x, d = deliveries[id]; if (!d || !confirm(`حذف عملية ${num(d.qty)} م³ (${nm(d.site)})؟`)) return;
+  try { await db.ref('audit').push({...d, id, sid: viewSid.id, deletedAt: Date.now()}); await db.ref(`deliveries/${viewSid.id}/${id}`).remove(); }
+  catch (err) { alert('تعذر الحذف: ' + err.message); }
 };
 let draft = [];
 function drawRn() {
@@ -345,6 +405,7 @@ $('delS').onclick = async () => {
   if (ans === null) return;
   const n = parseInt(String(ans).trim().replace(/[٠-٩]/g, c => '٠١٢٣٤٥٦٧٨٩'.indexOf(c)), 10);
   if (n !== a + b) return alert('الإجابة غير صحيحة، لم يُحذف شيء');
+  dl('backup-' + name + '.xls', xlsOf(Object.values(deliveries)));   // نسخة احتياطية قبل الحذف
   try {
     const others = Object.entries(window.sessions || {}).filter(([id]) => id !== sid).sort((x, y) => y[1].startedAt - x[1].startedAt);
     if (others.length) await db.ref('meta/activeSession').set(others[0][0]); else await newSession('الصبة الأولى');

@@ -132,8 +132,8 @@ const firebaseConfig = {
   messagingSenderId: "749008210469",
   appId: "1:749008210469:web:3df56985c3d354ca3f4dcc",
   measurementId: "G-R5MSKPB3VF"
-};
-const COMPANY = "شركة نبع الهادي"
+
+const COMPANY = "اسم شركتك";   // يظهر في ترويسة التقرير والواتساب
 const SITES = ["مضخة 1", "مضخة 2", "مضخة 3"];   // عدّل الأسماء أو أضف مواقع
 const QTYS = [7, 8, 9, 10];
 // ======================================================
@@ -310,18 +310,9 @@ setInterval(flush, 10000);
 function renderRecent() {
   const pend = new Set(ls.get('q', []).map(x => x.id));
   $('recent').innerHTML = ls.get('recent', []).map(r =>
-    `<div class="row"><span>${pend.has(r.id)?'⏳':'✅'} ${esc(nm(r.site))} — ${num(r.qty)} م³</span><span>${fmtT(r.ts)}${!pend.has(r.id) && Date.now() - r.ts < 120000 ? ` <button class="b un" data-u="${esc(r.id)}">↩️ تراجع</button>` : ''}</span></div>`).join('') || '<div class="row">لا توجد عمليات</div>';
+    `<div class="row"><span>${pend.has(r.id)?'⏳':'✅'} ${esc(nm(r.site))} — ${num(r.qty)} م³</span><span>${fmtT(r.ts)}</span></div>`).join('') || '<div class="row">لا توجد عمليات</div>';
 }
 
-$('recent').onclick = async e => {
-  const b = e.target.closest('[data-u]'); if (!b) return;
-  const it = ls.get('recent', []).find(x => x.id === b.dataset.u);
-  if (!it || !confirm('التراجع عن هذه العملية؟')) return;
-  const q = ls.get('q', []);
-  if (q.some(x => x.id === it.id)) ls.set('q', q.filter(x => x.id !== it.id));
-  else { try { await db.ref(`deliveries/${it.sid}/${it.id}`).remove(); } catch (err) { return alert('انتهت مهلة التراجع، اطلب من المدير الحذف'); } }
-  ls.set('recent', ls.get('recent', []).filter(x => x.id !== it.id)); renderRecent();
-};
 setInterval(renderRecent, 15000);
 // ---- لوحة المراقبة ----
 function render() {
@@ -371,28 +362,48 @@ $('log').onclick = async e => {
   try { await db.ref('audit').push({...d, id, sid: viewSid.id, deletedAt: Date.now()}); await db.ref(`deliveries/${viewSid.id}/${id}`).remove(); }
   catch (err) { alert('تعذر الحذف: ' + err.message); }
 };
-let draft = [];
+let draft = [], purge = [];
 function drawRn() {
   $('rnf').innerHTML = draft.map((d, i) => `<div class="rw"><input data-i="${i}" maxlength="30" value="${esc(d.name)}"><button class="b del" data-d="${i}" aria-label="حذف">🗑️</button></div>`).join('');
 }
-$('rnB').onclick = async () => { if (!(await needMgr())) return; draft = siteList.map(id => ({id, name: nm(id)})); drawRn(); $('rn').classList.toggle('hide'); };
+$('rnB').onclick = async () => { if (!(await needMgr())) return; purge = []; draft = siteList.map(id => ({id, name: nm(id)})); drawRn(); $('rn').classList.toggle('hide'); };
 $('rnf').oninput = e => { const i = e.target.dataset.i; if (i !== undefined) draft[i].name = e.target.value; };
-$('rnf').onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return;
+function mathOk(msg) {
+  const a = 10 + Math.floor(Math.random() * 40), b = 10 + Math.floor(Math.random() * 40);
+  const r = prompt(`⚠️ ${msg}\nللتأكيد أجب: ${a} + ${b} = ؟`); if (r === null) return false;
+  const n = parseInt(String(r).trim().replace(/[٠-٩]/g, c => '٠١٢٣٤٥٦٧٨٩'.indexOf(c)), 10);
+  if (n !== a + b) { alert('الإجابة غير صحيحة، لم يُحذف شيء'); return false; }
+  return true;
+}
+$('rnf').onclick = e => {
+  const b = e.target.closest('[data-d]'); if (!b) return;
   if (draft.length <= 1) return alert('يجب أن يبقى مجهز واحد على الأقل');
-  if (confirm('حذف هذا المجهز؟ تبقى عملياتها القديمة في السجل.')) { draft.splice(+b.dataset.d, 1); drawRn(); } };
+  const d = draft[+b.dataset.d];
+  const c = String(prompt(`حذف «${d.name}»:\n١ = المجهز فقط (تبقى كمياته في سجل الصبات)\n٢ = المجهز مع كل كمياته من كل الصبات (نهائي)`) || '').trim().replace(/[٠-٩]/g, x => '٠١٢٣٤٥٦٧٨٩'.indexOf(x));
+  if (c !== '1' && c !== '2') return;
+  if (c === '2') { if (!mathOk(`سيُحذف «${d.name}» وكل كمياته من كل الصبات نهائياً عند الحفظ.`)) return; purge.push(d.id); }
+  draft.splice(+b.dataset.d, 1); drawRn();
+};
 $('rnA').onclick = () => { draft.push({id: 'p' + Date.now().toString(36), name: 'مجهز جديد'}); drawRn(); };
 $('rnC').onclick = () => $('rn').classList.add('hide');
 $('rnS').onclick = async () => {
   if (!online) return alert('تحتاج اتصالاً بالإنترنت للحفظ');
   const out = {}, seen = new Set();
-  Object.keys(names).forEach(k => { if (!draft.some(d => d.id === k)) out[k] = names[k]; });   // أسماء المضخات المحذوفة تبقى للسجل
+  Object.keys(names).forEach(k => { if (!draft.some(d => d.id === k) && !purge.includes(k)) out[k] = names[k]; });   // أسماء المضخات المحذوفة تبقى للسجل
   for (const d of draft) {
     const v = d.name.trim();
     if (!v) return alert('لا يجوز ترك اسم فارغ');
     if (seen.has(v)) return alert('الأسماء يجب ألا تتكرر');
     seen.add(v); if (v !== d.id) out[d.id] = v;
   }
-  try { await db.ref('meta').update({siteList: draft.map(d => d.id), names: Object.keys(out).length ? out : null}); $('rn').classList.add('hide'); }
+  try { await db.ref('meta').update({siteList: draft.map(d => d.id), names: Object.keys(out).length ? out : null});
+    if (purge.length) {
+      const all = (await db.ref('deliveries').once('value')).val() || {}, up = {};
+      Object.entries(all).forEach(([sid, o]) => Object.entries(o).forEach(([id, d]) => { if (purge.includes(d.site)) up[`deliveries/${sid}/${id}`] = null; }));
+      if (Object.keys(up).length) await db.ref().update(up);
+      purge = [];
+    }
+    $('rn').classList.add('hide'); }
   catch (e) { alert('تعذر الحفظ: ' + e.message); }
 };
 $('delS').onclick = async () => {

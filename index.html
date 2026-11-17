@@ -116,6 +116,7 @@ tr:last-child td{border-bottom:0}
   <input id="custom" type="number" inputmode="decimal" step="0.5" min="0" placeholder="كمية مخصصة" style="margin-top:10px">
   <button id="send">اختر الكمية</button>
   <h2>آخر 5 عمليات</h2>
+  <div class="tools" style="justify-content:flex-end"><button class="b un" id="clrB">🧹 تصفير آخر العمليات</button></div>
   <div id="recent"></div>
 </section>
 
@@ -366,6 +367,23 @@ $('recent').onclick = async e => {
   if (q.some(x => x.id === it.id)) ls.set('q', q.filter(x => x.id !== it.id));
   else { try { await db.ref(`deliveries/${it.sid}/${it.id}`).remove(); } catch (err) { return alert('انتهت مهلة التراجع، اطلب من المدير الحذف'); } }
   ls.set('recent', ls.get('recent', []).filter(x => x.id !== it.id)); renderRecent();
+};
+// ---- تصفير آخر العمليات (البدء من الصفر) ----
+$('clrB').onclick = async () => {
+  if (!(await needMgr())) return;
+  const hasRecent = ls.get('recent', []).length > 0, hasDel = Object.keys(deliveries).length > 0;
+  if (!hasRecent && !hasDel) return alert('لا توجد عمليات لتصفيرها');
+  if (!online) return alert('تحتاج اتصالاً بالإنترنت لتصفير العمليات المسجّلة');
+  if (!viewSid) return alert('لم يتم تحميل الصبة الحالية بعد، تأكد من الاتصال');
+  if (!confirm('تصفير آخر العمليات؟\n\nسيُحذف كل ما سُجِّل في الصبة الحالية وتعود العدادات إلى الصفر، وسيتم أرشفة العمليات المحذوفة.\nهذا الإجراء لا يمكن التراجع عنه.')) return;
+  try {
+    for (const [id, d] of Object.entries(deliveries)) await db.ref('audit').push({...d, id, sid: viewSid.id, deletedAt: Date.now()});   // أرشفة العمليات المحذوفة
+    await db.ref('deliveries/' + viewSid.id).remove();   // حذف العمليات المسجّلة للعودة إلى الصفر
+    ls.set('q', []);   // إفراغ الطابور المحلي للعمليات غير المرسلة
+    ls.set('recent', []);   // مسح قائمة آخر 5 عمليات
+    render(); renderRecent();
+    alert('تم تصفير آخر العمليات — تم البدء من الصفر');
+  } catch (e) { alert('تعذر التصفير: ' + e.message); }
 };
 setInterval(renderRecent, 15000);
 // ---- لوحة المراقبة ----

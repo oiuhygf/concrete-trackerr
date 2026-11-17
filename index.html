@@ -85,7 +85,7 @@ tr:last-child td{border-bottom:0}
 .hb i{display:block;width:30px;background:linear-gradient(180deg,var(--teal),var(--teal-d));border-radius:8px 8px 3px 3px;transition:height .5s cubic-bezier(.2,.8,.3,1),box-shadow .2s;box-shadow:0 0 12px var(--tint)}
 .hb small{font-size:12px;color:var(--mute)}
 .po,.sig{display:none}.sig{justify-content:space-between;margin-top:40px}
-#tot{transition:background .6s}#tot.fl{background:var(--fl)}
+#tot.fl{animation:pop .9s ease}.big.fl{background:var(--fl)}@keyframes pop{0%{transform:scale(1)}30%{transform:scale(1.08)}100%{transform:scale(1)}}
 .hide,.gate.hide{display:none}
 .lkonly{display:none}body.lk .lkonly{display:block}body.lk .dt{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -280,7 +280,7 @@ db.ref('meta/siteList').on('value', s => { const v = s.val(); siteList = v ? Obj
 function notify() {
   if ($('dv').classList.contains('hide')) return;
   if (ls.get('snd', true)) { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const o = AC.createOscillator(), g = AC.createGain(); o.frequency.value = 880; g.gain.value = .3; o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime + .25); } catch (e) {} if (navigator.vibrate) navigator.vibrate(200); }
-  $('tot').classList.add('fl'); setTimeout(() => $('tot').classList.remove('fl'), 1500);
+  const bg = $('tot').closest('.big'); $('tot').classList.add('fl'); bg.classList.add('fl'); setTimeout(() => { $('tot').classList.remove('fl'); bg.classList.remove('fl'); }, 1500);
 }
 $('snd').textContent = ls.get('snd', true) ? '🔔' : '🔕';
 $('snd').onclick = () => { ls.set('snd', !ls.get('snd', true)); $('snd').textContent = ls.get('snd', true) ? '🔔' : '🔕'; };
@@ -378,15 +378,19 @@ setInterval(renderRecent, 15000);
 // ---- عرض الرقم الإجمالي بسلاسة (عدّ تصاعدي) ----
 function animateNum(el, to) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) { el.textContent = num(to); return; }
+  if (el.__raf) { cancelAnimationFrame(el.__raf); el.__raf = null; }   // إيقاف أي حركة سابقة لتجنب تداخل الحركات واهتزاز الرقم
   const from = parseFloat(el.textContent.replace(/,/g, '')) || 0;
-  if (reduce || from === to) { el.textContent = num(to); return; }
-  const t0 = performance.now(), dur = 550;
+  if (from === to) { el.textContent = num(to); return; }
+  const set = v => { const s = num(v); if (el.textContent !== s) el.textContent = s; };   // كتابة فقط عند التغير لتجنب الارتجاف
+  const t0 = performance.now(), dur = 450;
   const step = t => {
     const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);   // easeOutCubic
-    el.textContent = num(from + (to - from) * e);
-    if (k < 1) requestAnimationFrame(step); else el.textContent = num(to);
+    set(from + (to - from) * e);
+    if (k < 1) el.__raf = requestAnimationFrame(step);
+    else { el.__raf = null; set(to); }
   };
-  requestAnimationFrame(step);
+  el.__raf = requestAnimationFrame(step);
 }
 // ---- لوحة المراقبة ----
 function render() {
@@ -497,5 +501,5 @@ $('fs').onchange = e => { fSite = e.target.value; render(); };
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 lbl(); renderRecent();
 </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c03ba66af08dec',t:'MTc5NDkzNDIxMQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c03ba66af08dec',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

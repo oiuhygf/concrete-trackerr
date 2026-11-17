@@ -53,8 +53,6 @@ h2::before{content:"";width:8px;height:8px;border-radius:50%;background:linear-g
 .row:hover{border-color:var(--teal);transform:translateY(-2px)}
 .big{background:linear-gradient(165deg,var(--tint),var(--card));border:1px solid var(--big-line);border-radius:28px;padding:22px 24px;margin-bottom:16px;box-shadow:var(--shadow);transition:background-color .35s ease,border-color .35s ease}
 .big .n{font-size:clamp(60px,15vw,112px);font-weight:700;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;display:inline-block;border-radius:16px;padding:0 4px;color:var(--teal);background:linear-gradient(135deg,var(--teal),var(--teal2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:fadeUp .5s ease both}
-.big .n.pop{animation:numPop .5s cubic-bezier(.2,.8,.3,1)}
-@keyframes numPop{0%{transform:scale(1)}30%{transform:scale(1.09)}100%{transform:scale(1)}}
 .big .u{font-size:26px;font-weight:700;color:var(--teal-d);margin-inline-start:8px}
 .big .m{font-size:16px;color:var(--soft)}
 .cards{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
@@ -356,18 +354,9 @@ setInterval(flush, 10000);
 function renderRecent() {
   const pend = new Set(ls.get('q', []).map(x => x.id));
   $('recent').innerHTML = ls.get('recent', []).map(r =>
-    `<div class="row"><span>${pend.has(r.id)?'⏳':'✅'} ${esc(nm(r.site))} — ${num(r.qty)} م³</span><span>${fmtT(r.ts)}${!pend.has(r.id) && Date.now() - r.ts < 120000 ? ` <button class="b un" data-u="${esc(r.id)}">↩️ تراجع</button>` : ''}</span></div>`).join('') || '<div class="row">لا توجد عمليات</div>';
+    `<div class="row"><span>${pend.has(r.id)?'⏳':'✅'} ${esc(nm(r.site))} — ${num(r.qty)} م³</span><span>${fmtT(r.ts)}</span></div>`).join('') || '<div class="row">لا توجد عمليات</div>';
 }
 
-$('recent').onclick = async e => {
-  const b = e.target.closest('[data-u]'); if (!b) return;
-  const it = ls.get('recent', []).find(x => x.id === b.dataset.u);
-  if (!it || !confirm('التراجع عن هذه العملية؟')) return;
-  const q = ls.get('q', []);
-  if (q.some(x => x.id === it.id)) ls.set('q', q.filter(x => x.id !== it.id));
-  else { try { await db.ref(`deliveries/${it.sid}/${it.id}`).remove(); } catch (err) { return alert('انتهت مهلة التراجع، اطلب من المدير الحذف'); } }
-  ls.set('recent', ls.get('recent', []).filter(x => x.id !== it.id)); renderRecent();
-};
 // ---- تصفير آخر العمليات (البدء من الصفر) ----
 $('clrB').onclick = async () => {
   if (!(await needMgr())) return;
@@ -386,6 +375,19 @@ $('clrB').onclick = async () => {
   } catch (e) { alert('تعذر التصفير: ' + e.message); }
 };
 setInterval(renderRecent, 15000);
+// ---- عرض الرقم الإجمالي بسلاسة (عدّ تصاعدي) ----
+function animateNum(el, to) {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const from = parseFloat(el.textContent.replace(/,/g, '')) || 0;
+  if (reduce || from === to) { el.textContent = num(to); return; }
+  const t0 = performance.now(), dur = 550;
+  const step = t => {
+    const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);   // easeOutCubic
+    el.textContent = num(from + (to - from) * e);
+    if (k < 1) requestAnimationFrame(step); else el.textContent = num(to);
+  };
+  requestAnimationFrame(step);
+}
 // ---- لوحة المراقبة ----
 function render() {
   const lk = !(authOk && (role === 'manager' || !authH.m)); document.body.classList.toggle('lk', lk);
@@ -396,8 +398,7 @@ function render() {
   const list = f === 'all' ? all : all.filter(d => d.site === f);
   const by = {}; siteList.forEach(s => by[s] = {q:0,c:0,t:0});
   all.forEach(d => { const x = by[d.site] || (by[d.site] = {q:0,c:0,t:0}); x.q += d.qty; x.c++; x.t = Math.max(x.t, d.ts); });
-  const totEl = $('tot'); totEl.textContent = num(list.reduce((a,d) => a + d.qty, 0));
-  totEl.classList.remove('pop'); void totEl.offsetWidth; totEl.classList.add('pop');
+  animateNum($('tot'), list.reduce((a,d) => a + d.qty, 0));
   $('cnt').textContent = list.length;
   const sn = (window.sessions && viewSid && window.sessions[viewSid.id]?.name) || '', fn = f === 'all' ? 'جميع المجهزين' : nm(f);
   $('sname').textContent = sn + (f === 'all' ? '' : ' — ' + fn);
